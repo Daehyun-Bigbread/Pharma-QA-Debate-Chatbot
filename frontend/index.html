@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharma QA Debate - 실시간 토론</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 사이드바 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏥 GMP Center</h2>
+                <p class="subtitle">QA 토론 챗봇</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" onclick="showSection('debate')">
+                    💬 새 토론 시작
+                </button>
+                <button class="nav-btn" onclick="showSection('history')">
+                    📋 토론 목록
+                </button>
+                <button class="nav-btn" onclick="showSection('settings')">
+                    ⚙️ 설정
+                </button>
+            </nav>
+
+            <!-- 토론 설정 -->
+            <div class="debate-settings section-content" id="debate-settings">
+                <h3>토론 설정</h3>
+
+                <div class="setting-group">
+                    <label>라운드 수</label>
+                    <select id="rounds">
+                        <option value="2">2 라운드</option>
+                        <option value="3" selected>3 라운드</option>
+                        <option value="4">4 라운드</option>
+                        <option value="5">5 라운드</option>
+                        <option value="6">6 라운드</option>
+                        <option value="7">7 라운드</option>
+                        <option value="8">8 라운드</option>
+                        <option value="9">9 라운드</option>
+                        <option value="10">10 라운드</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label>발언 길이</label>
+                    <select id="responseLength">
+                        <option value="짧게">짧게</option>
+                        <option value="보통" selected>보통</option>
+                        <option value="길게">길게</option>
+                    </select>
+                </div>
+
+                <button class="collapse-btn" onclick="toggleAdvancedSettings()">
+                    고급 설정 ▼
+                </button>
+
+                <div class="advanced-settings" id="advanced-settings">
+                    <div class="setting-group">
+                        <label>공통 QA 조건</label>
+                        <textarea id="commonQA" rows="3" placeholder="기본값 사용 (비워두면 자동 설정)"></textarea>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Agent A 성향</label>
+                        <textarea id="agentAProfile" rows="3" placeholder="전통적 QA 접근 (기본값 사용)"></textarea>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Agent B 성향</label>
+                        <textarea id="agentBProfile" rows="3" placeholder="근거 기반 QA 접근 (기본값 사용)"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 토론 목록 -->
+            <div class="history-section section-content" id="history-section" style="display: none;">
+                <h3>📋 토론 목록</h3>
+                <div id="history-list" class="history-list">
+                    <p class="empty-message">저장된 토론이 없습니다.</p>
+                </div>
+            </div>
+
+            <!-- 설정 섹션 -->
+            <div class="settings-section section-content" id="settings-section" style="display: none;">
+                <h3>⚙️ 설정</h3>
+
+                <div class="setting-group">
+                    <label>저장된 토론 개수</label>
+                    <p class="setting-info" id="history-count">0개</p>
+                </div>
+
+                <div class="setting-group">
+                    <button class="action-btn danger" onclick="clearAllHistory()">
+                        🗑️ 모든 토론 기록 삭제
+                    </button>
+                </div>
+
+                <div class="setting-group">
+                    <label>기본 설정값 복구</label>
+                    <button class="action-btn" onclick="resetToDefaults()">
+                        🔄 기본값으로 되돌리기
+                    </button>
+                </div>
+
+                <div class="setting-group">
+                    <label>버전 정보</label>
+                    <p class="setting-info">Pharma QA Debate Bot v1.0</p>
+                    <p class="setting-info">OpenAI GPT-4 기반</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 메인 채팅 영역 -->
+        <main class="main-content">
+            <!-- 헤더 -->
+            <header class="chat-header">
+                <div class="header-info">
+                    <h1>Pharma QA Debate Bot</h1>
+                    <p>전통적 QA vs 근거 기반 QA – 규제 안에서 토론하기</p>
+                </div>
+                <div class="header-actions">
+                    <button class="header-btn" onclick="resetDebate()" title="새 토론">
+                        🔄 새로고침
+                    </button>
+                    <button class="header-btn" onclick="showSummary()" title="토론 요약" id="summary-btn" style="display: none;">
+                        📊 요약
+                    </button>
+                </div>
+            </header>
+
+            <!-- 채팅 컨테이너 -->
+            <div class="chat-container" id="chat-container">
+                <!-- 초기 화면 -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-content">
+                        <h2>🏥 Pharma QA 토론을 시작하세요</h2>
+                        <p>의약품 품질보증(QA) 전문가 2명이 토론합니다</p>
+
+                        <div class="example-topics">
+                            <h3>예시 주제:</h3>
+                            <button class="topic-btn" onclick="setTopic('정기적 재밸리데이션에서 3 batch 수행이 필수적인가?')">
+                                정기적 재밸리데이션 3 batch 필수 여부
+                            </button>
+                            <button class="topic-btn" onclick="setTopic('Cleaning Validation에서 worst-case 배치 선정 기준은?')">
+                                Cleaning Validation worst-case 선정
+                            </button>
+                            <button class="topic-btn" onclick="setTopic('PDE 기반 세척 기준이 전통적 방법보다 우수한가?')">
+                                PDE vs 전통적 세척 기준
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 메시지 영역 -->
+                <div class="messages" id="messages"></div>
+            </div>
+
+            <!-- 입력 영역 -->
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea
+                        id="topic-input"
+                        placeholder="토론 주제를 입력하세요... (예: 정기적 재밸리데이션에서 3 batch 수행이 필수적인가?)"
+                        rows="2"
+                    ></textarea>
+                    <button class="send-btn" onclick="startDebate()" id="send-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

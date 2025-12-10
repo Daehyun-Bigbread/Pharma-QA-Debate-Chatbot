@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharma QA Debate Bot</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pharma QA Debate Bot</h1>
+            <p class="subtitle">전통적 QA vs 근거 기반 QA – 규제 안에서 토론하기</p>
+        </header>
+
+        <main id="main-content">
+            <!-- 입력 폼 섹션 -->
+            <section id="input-section" class="card">
+                <h2>토론 설정</h2>
+
+                <div class="form-group">
+                    <label for="topic">토론 주제를 입력하세요 *</label>
+                    <textarea
+                        id="topic"
+                        rows="3"
+                        placeholder="예: 정기적 재밸리데이션에서 3 batch 수행이 필수적인가?"
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="collapsible-section">
+                    <button type="button" class="collapsible-btn" onclick="toggleSection('common-qa-section')">
+                        <span class="collapsible-icon">⚙️</span>
+                        공통 QA 조건 설정 (선택사항)
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div id="common-qa-section" class="collapsible-content">
+                        <div class="collapsible-inner">
+                            <p class="section-description">
+                                두 에이전트에게 공통적으로 적용될 배경 정보를 설정합니다. 비워두면 기본값이 자동으로 적용됩니다.
+                            </p>
+                            <textarea
+                                id="commonQA"
+                                rows="5"
+                                placeholder="예시:&#10;- 두 에이전트 모두 제약회사 품질보증부(QA) 경력 10년 이상&#10;- FDA, EU GMP, MFDS(식약처) 규제 및 가이드라인 준수&#10;- Validation, CPV, APR/PQR 등 기본 QA 시스템 이해"
+                            ></textarea>
+                            <button type="button" class="btn-load-default" onclick="loadDefaultCommonQA()">
+                                📋 기본 QA 설정 불러오기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="section-title">
+                    <span class="section-icon">👥</span>
+                    에이전트 설정
+                </h3>
+
+                <div class="agent-configs">
+                    <div class="agent-config agent-config-a">
+                        <div class="agent-header">
+                            <div class="agent-badge agent-badge-a">A</div>
+                            <div>
+                                <h3>Agent A</h3>
+                                <p class="agent-subtitle">전통적 QA 접근</p>
+                            </div>
+                        </div>
+                        <p class="helper-text">
+                            💡 전통파, 보수적 규제 해석, 정기 재밸리데이션 유지, 감사 대응을 매우 중시 등
+                        </p>
+                        <textarea
+                            id="agentAProfile"
+                            rows="6"
+                            placeholder="예시:&#10;- 전통적인 품질 시스템을 선호&#10;- 정기적 재밸리데이션(3 batch)을 기본 원칙으로 생각&#10;- 규제기관 실사에서 '너무 공격적으로 바꾼 시스템'은 리스크라고 보는 입장&#10;- '관행 + 문서화된 근거'를 가장 안전한 선택으로 봄"
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="agent-config agent-config-b">
+                        <div class="agent-header">
+                            <div class="agent-badge agent-badge-b">B</div>
+                            <div>
+                                <h3>Agent B</h3>
+                                <p class="agent-subtitle">근거 기반 QA 접근</p>
+                            </div>
+                        </div>
+                        <p class="helper-text">
+                            💡 근거 기반, risk-based, CPV/연간 품질평가 중시, 리소스 효율성 강조 등
+                        </p>
+                        <textarea
+                            id="agentBProfile"
+                            rows="6"
+                            placeholder="예시:&#10;- Risk-based, Evidence-based 접근을 선호&#10;- ICH Q9(QRM), Q10(PQS), CPV, 통계 기반 공정관리 활용&#10;- 단순한 주기적 재밸리데이션보다, CPP–CQA 모니터링과 연간 품질평가를 선호&#10;- 리소스 효율성과 지속적 개선(Continuous Improvement)을 중요하게 생각"
+                            required
+                        ></textarea>
+                    </div>
+                </div>
+
+                <h3 class="section-title">
+                    <span class="section-icon">⚙️</span>
+                    토론 옵션
+                </h3>
+
+                <div class="options-grid">
+                    <div class="form-group">
+                        <label for="rounds">
+                            <span class="label-icon">🔄</span>
+                            라운드 수
+                            <span class="info-tooltip" title="라운드가 많을수록 더 깊은 토론이 진행됩니다">ⓘ</span>
+                        </label>
+                        <select id="rounds">
+                            <option value="2">2 라운드 (빠른 토론)</option>
+                            <option value="3" selected>3 라운드 (권장)</option>
+                            <option value="4">4 라운드 (상세 토론)</option>
+                            <option value="5">5 라운드 (심화 토론)</option>
+                            <option value="6">6 라운드</option>
+                            <option value="7">7 라운드</option>
+                            <option value="8">8 라운드</option>
+                            <option value="9">9 라운드</option>
+                            <option value="10">10 라운드 (매우 깊은 토론)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="responseLength">
+                            <span class="label-icon">📝</span>
+                            발언 길이
+                        </label>
+                        <select id="responseLength">
+                            <option value="짧게">짧게 (3-4문장)</option>
+                            <option value="보통" selected>보통 (5-7문장)</option>
+                            <option value="길게">길게 (8-10문장)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tone">
+                            <span class="label-icon">🎯</span>
+                            표현 톤
+                        </label>
+                        <select id="tone">
+                            <option value="실무자 느낌" selected>실무자 느낌</option>
+                            <option value="교육용">교육용</option>
+                            <option value="매우 형식적">매우 형식적</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn-primary" onclick="startDebate()">
+                        토론 시작하기
+                    </button>
+                </div>
+            </section>
+
+            <!-- 로딩 표시 -->
+            <section id="loading-section" class="card hidden">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>토론을 생성하고 있습니다...</p>
+                    <p class="loading-subtext">AI 에이전트들이 토론을 준비하고 있습니다. 잠시만 기다려주세요.</p>
+                </div>
+            </section>
+
+            <!-- 토론 결과 섹션 -->
+            <section id="debate-section" class="hidden">
+                <div class="debate-header">
+                    <h2>토론 진행</h2>
+                    <div class="button-group">
+                        <button type="button" class="btn-secondary" onclick="showSummary()">
+                            토론 요약 보기
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="resetDebate()">
+                            새 토론 시작
+                        </button>
+                    </div>
+                </div>
+
+                <div id="debate-content"></div>
+            </section>
+
+            <!-- 요약 섹션 -->
+            <section id="summary-section" class="card hidden">
+                <h2>토론 요약</h2>
+                <div id="summary-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>토론 내용을 요약하고 있습니다...</p>
+                </div>
+                <div id="summary-content" class="summary-content"></div>
+                <button type="button" class="btn-secondary" onclick="closeSummary()">
+                    닫기
+                </button>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
