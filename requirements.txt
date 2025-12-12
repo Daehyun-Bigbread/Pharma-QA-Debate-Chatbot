@@ -1,0 +1,16 @@
+# Pharma QA Debate Chatbot - Python 패키지 요구사항
+#
+# 이 파일은 프로젝트의 모든 Python 패키지를 나열합니다.
+#
+# 설치 방법:
+#   pip install -r requirements.txt
+#
+# 또는 자동 설치 스크립트를 사용하세요:
+#   python start.py  (권장)
+
+# Backend dependencies
+fastapi==0.109.0
+uvicorn==0.27.0
+python-dotenv==1.0.0
+openai==1.10.0
+pydantic==2.5.3
