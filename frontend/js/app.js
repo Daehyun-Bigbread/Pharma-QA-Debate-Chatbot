@@ -5,6 +5,7 @@ const API_BASE_URL = 'http://localhost:8000';
 let currentDebate = [];
 let currentTopic = '';
 let isDebating = false;
+let currentMode = 'debate'; // 'debate' or 'analyze'
 
 // 기본 프로필
 const DEFAULT_COMMON_QA = `- 두 에이전트 모두 제약회사 품질보증부(QA)에서 10년 이상 근무한 전문가입니다.
@@ -21,13 +22,22 @@ const DEFAULT_AGENT_B = `- Risk-based, Evidence-based 접근을 선호합니다.
 - CPP-CQA 모니터링과 연간 품질평가를 선호합니다.
 - 리소스 효율성과 지속적 개선을 중요하게 생각합니다.`;
 
+// 입력창 제출 처리 (모드에 따라 분기)
+function handleSubmit() {
+    if (currentMode === 'debate') {
+        startDebate();
+    } else if (currentMode === 'analyze') {
+        startAnalyze();
+    }
+}
+
 // 페이지 로드 시
 window.addEventListener('DOMContentLoaded', () => {
     // Enter 키로 전송
     document.getElementById('topic-input').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            startDebate();
+            handleSubmit();
         }
     });
 
@@ -46,8 +56,15 @@ function toggleAdvancedSettings() {
 function showSection(section) {
     // 모든 섹션 숨기기
     document.getElementById('debate-settings').style.display = 'none';
+    document.getElementById('analyze-section').style.display = 'none';
     document.getElementById('history-section').style.display = 'none';
     document.getElementById('settings-section').style.display = 'none';
+
+    // 메인 영역 표시/숨김
+    document.getElementById('welcome-screen').style.display = 'none';
+    document.getElementById('analyze-welcome-screen').style.display = 'none';
+    document.getElementById('analysis-result').style.display = 'none';
+    document.getElementById('messages').style.display = 'none';
 
     // 모든 버튼에서 active 클래스 제거
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -56,15 +73,26 @@ function showSection(section) {
 
     // 선택된 섹션 표시
     if (section === 'debate') {
+        currentMode = 'debate';
         document.getElementById('debate-settings').style.display = 'block';
         document.querySelectorAll('.nav-btn')[0].classList.add('active');
+        if (!isDebating) {
+            document.getElementById('welcome-screen').style.display = 'flex';
+        } else {
+            document.getElementById('messages').style.display = 'block';
+        }
+    } else if (section === 'analyze') {
+        currentMode = 'analyze';
+        document.getElementById('analyze-section').style.display = 'block';
+        document.querySelectorAll('.nav-btn')[1].classList.add('active');
+        document.getElementById('analyze-welcome-screen').style.display = 'flex';
     } else if (section === 'history') {
         document.getElementById('history-section').style.display = 'block';
-        document.querySelectorAll('.nav-btn')[1].classList.add('active');
+        document.querySelectorAll('.nav-btn')[2].classList.add('active');
         loadHistoryList();
     } else if (section === 'settings') {
         document.getElementById('settings-section').style.display = 'block';
-        document.querySelectorAll('.nav-btn')[2].classList.add('active');
+        document.querySelectorAll('.nav-btn')[3].classList.add('active');
         updateHistoryCount();
     }
 }
@@ -482,4 +510,133 @@ function resetDebate() {
 
     // 토론 시작 섹션으로 이동
     showSection('debate');
+}
+
+// ==================== 가이드라인 분석 기능 ====================
+
+// 분석 주제 설정
+function setAnalyzeTopic(topic) {
+    document.getElementById('topic-input').value = topic;
+    startAnalyze();
+}
+
+// 가이드라인 분석 시작
+async function startAnalyze() {
+    const topic = document.getElementById('topic-input').value.trim();
+
+    if (!topic) {
+        alert('분석할 주제를 입력해주세요.');
+        return;
+    }
+
+    // 분석 화면 표시
+    document.getElementById('analyze-welcome-screen').style.display = 'none';
+    document.getElementById('analysis-result').style.display = 'flex';
+    document.getElementById('analysis-topic').textContent = `📊 분석 중: ${topic}`;
+
+    // 모든 탭 버튼 리셋 및 첫 번째 탭 활성화
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+
+    // 모든 탭 콘텐츠 초기화 및 첫 번째 탭 활성화
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById('tab-FDA').classList.add('active');
+
+    ['FDA', 'EU_GMP', 'ICH', 'MFDS'].forEach(key => {
+        document.getElementById(`tab-${key}`).innerHTML = '<div class="loading">🔄 분석 중... 잠시만 기다려주세요.</div>';
+    });
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ topic })
+        });
+
+        if (!response.ok) {
+            throw new Error('분석 요청에 실패했습니다.');
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            // 분석 완료 - 제목 업데이트
+            document.getElementById('analysis-topic').textContent = `✅ ${topic}`;
+
+            // 각 가이드라인별 분석 결과를 탭에 표시
+            Object.keys(data.analyses).forEach(key => {
+                const content = data.analyses[key];
+                const tabElement = document.getElementById(`tab-${key}`);
+
+                // 마크다운 형식을 HTML로 변환 (간단한 변환)
+                const htmlContent = convertMarkdownToHTML(content);
+                tabElement.innerHTML = htmlContent;
+            });
+        } else {
+            throw new Error('분석 결과를 가져오는데 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('분석 오류:', error);
+        alert('분석 중 오류가 발생했습니다: ' + error.message);
+
+        // 오류 발생 시 초기 화면으로 돌아가기
+        document.getElementById('analysis-result').style.display = 'none';
+        document.getElementById('analyze-welcome-screen').style.display = 'flex';
+    }
+}
+
+// 탭 전환
+function switchTab(guideline) {
+    // 모든 탭 버튼 비활성화
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // 모든 탭 콘텐츠 숨기기
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    // 선택된 탭 활성화
+    event.target.classList.add('active');
+    document.getElementById(`tab-${guideline}`).classList.add('active');
+}
+
+// 간단한 마크다운을 HTML로 변환
+function convertMarkdownToHTML(markdown) {
+    let html = markdown;
+
+    // ## 제목 변환
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+
+    // ### 제목 변환
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+
+    // **굵은 글씨** 변환
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // - 리스트 변환
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+    // 연속된 </ul><ul> 제거
+    html = html.replace(/<\/ul>\s*<ul>/g, '');
+
+    // 줄바꿈을 <p> 태그로 변환
+    const paragraphs = html.split('\n\n');
+    html = paragraphs.map(p => {
+        // 이미 HTML 태그가 있는 경우 그대로 반환
+        if (p.startsWith('<h') || p.startsWith('<ul') || p.trim() === '') {
+            return p;
+        }
+        return `<p>${p.trim()}</p>`;
+    }).join('\n');
+
+    return html;
 }

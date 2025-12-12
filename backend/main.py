@@ -59,11 +59,68 @@ class SummaryResponse(BaseModel):
     summary: str
 
 
+class AnalyzeRequest(BaseModel):
+    topic: str
+
+
+class GuidelineAnalysis(BaseModel):
+    guideline: str
+    analysis: str
+
+
+class AnalyzeResponse(BaseModel):
+    success: bool
+    analyses: dict  # {guideline_name: analysis_text}
+
+
 # 프롬프트 생성 함수
 def generate_system_prompt(common_qa: str, agent_profile: str, agent_type: str) -> str:
     agent_name = "Agent A (전통적 QA 접근)" if agent_type == "A" else "Agent B (근거 기반 QA 접근)"
 
-    return f"""[공통 QA 조건]
+    return f"""[역할 정의]
+너는 제약업계 품질보증(Quality Assurance) 분야에서 10년 이상 근무한 시니어 QA 전문가이다.
+의약품 제조·시험·출하·밸리데이션·변경관리·일탈관리 전반을 경험했으며,
+규제 요구사항을 "그대로 따르는 것"과 "근거 기반으로 합리적으로 해석·운영하는 것"의 차이를 명확히 이해하고 있다.
+
+[전문성 범위]
+다음 가이드라인과 규정을 상호 비교·연계하여 빠르게 해석할 수 있다:
+
+Global GMP:
+- FDA 21 CFR Part 210/211
+- EU GMP (Part I, II, Annex 1, 11, 15)
+- PIC/S GMP Guide
+- ICH Q7, Q8, Q9, Q10, Q11
+
+국내 규정:
+- MFDS(식약처) KGMP
+- 식약처 질의응답(Q&A), 행정처분 사례
+
+핵심 실무 영역:
+- Cleaning Validation (PDE / MACO / Worst Case)
+- Process Validation & Revalidation
+- Data Integrity (ALCOA+)
+- Change Control / Deviation / CAPA
+- Stability / Release / Tech Transfer
+- Audit 대응 (Regulatory / Customer)
+
+[사고 방식]
+항상 다음 순서로 사고한다:
+1. 규제 요구사항의 원문 의도(intent) 파악
+2. 필수 요구사항(must) 과 운영 선택사항(can) 구분
+3. 회사 규모·제품 특성·위험도 기반의 합리적 해석 가능성 검토
+4. 감사 시 지적 가능성과 방어 논리를 동시에 고려
+5. "왜 이 방식이 acceptable 한가?"를 문서화 관점에서 설명
+
+[응답 원칙]
+- 단순한 "된다 / 안 된다"가 아니라
+  ✔ 규정 근거 → ✔ 실무 해석 → ✔ 리스크 → ✔ 권장 방향 순서로 설명한다.
+- 모호한 사안일 경우:
+  - 보수적 해석 vs 합리적 해석을 비교 제시
+  - 규제기관 관점에서의 질문 포인트를 명확히 짚는다.
+- 내부 보고용/감사용 문구로 바로 사용 가능한 표현을 선호한다.
+- 과도한 이론 설명보다 현장 적용 가능성을 중시한다.
+
+[공통 QA 조건]
 {common_qa}
 
 [{agent_name} 전용 설정]
@@ -416,6 +473,82 @@ async def stream_debate(request: DebateRequest):
             "Connection": "keep-alive",
         }
     )
+
+
+@app.post("/api/analyze", response_model=AnalyzeResponse)
+async def analyze_topic(request: AnalyzeRequest):
+    """주제에 대해 각 가이드라인별로 분석"""
+    try:
+        if not request.topic:
+            raise HTTPException(status_code=400, detail="분석할 주제를 입력해주세요.")
+
+        guidelines = {
+            "FDA": "FDA 21 CFR Part 210/211",
+            "EU_GMP": "EU GMP (Part I, II, Annex 1, 11, 15)",
+            "ICH": "ICH Guidelines (Q7, Q8, Q9, Q10, Q11)",
+            "MFDS": "MFDS(식약처) KGMP 및 관련 규정"
+        }
+
+        analyses = {}
+
+        # 각 가이드라인별로 분석 생성
+        for key, guideline_name in guidelines.items():
+            system_prompt = f"""너는 제약업계 품질보증(Quality Assurance) 분야에서 10년 이상 근무한 시니어 QA 전문가이다.
+
+[전문성]
+- {guideline_name}에 대한 깊은 이해와 실무 경험
+- 규제 요구사항의 원문 의도(intent)를 정확히 파악
+- 필수 요구사항(must) 과 운영 선택사항(can)을 명확히 구분
+
+[분석 원칙]
+1. 규정 근거: 해당 가이드라인의 구체적인 조항과 내용 인용
+2. 실무 해석: 실제 현장에서 어떻게 적용되는지 설명
+3. 핵심 요구사항: 반드시 준수해야 할 사항 명시
+4. 권장사항: 추가로 고려하면 좋은 사항
+5. 주의사항: 실사/감사 시 자주 지적되는 포인트
+
+[응답 형식]
+다음 구조로 응답하세요:
+
+## 규정 근거
+(해당 가이드라인의 관련 조항 및 내용)
+
+## 실무 해석
+(현장 적용 방법 및 해석)
+
+## 핵심 요구사항
+(필수적으로 준수해야 할 사항들)
+
+## 권장사항
+(추가로 고려하면 좋은 사항들)
+
+## 감사 대응 포인트
+(실사/감사 시 주의사항)
+"""
+
+            user_prompt = f"""다음 주제에 대해 {guideline_name} 관점에서 분석해주세요:
+
+[주제]
+{request.topic}
+
+위 주제에 대해 {guideline_name}의 요구사항을 상세히 분석하고, 실무적인 적용 방법을 제시해주세요."""
+
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.5,
+                max_tokens=2000
+            )
+
+            analyses[key] = response.choices[0].message.content
+
+        return AnalyzeResponse(success=True, analyses=analyses)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"분석 생성 중 오류가 발생했습니다: {str(e)}")
 
 
 if __name__ == "__main__":

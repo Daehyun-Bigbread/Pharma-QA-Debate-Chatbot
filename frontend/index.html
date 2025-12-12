@@ -11,13 +11,16 @@
         <!-- 사이드바 -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>🏥 GMP Center</h2>
+                <h2>🏥 GW GMP Study Center</h2>
                 <p class="subtitle">QA 토론 챗봇</p>
             </div>
 
             <nav class="sidebar-nav">
                 <button class="nav-btn active" onclick="showSection('debate')">
                     💬 새 토론 시작
+                </button>
+                <button class="nav-btn" onclick="showSection('analyze')">
+                    📚 가이드라인 분석
                 </button>
                 <button class="nav-btn" onclick="showSection('history')">
                     📋 토론 목록
@@ -82,6 +85,27 @@
                 <h3>📋 토론 목록</h3>
                 <div id="history-list" class="history-list">
                     <p class="empty-message">저장된 토론이 없습니다.</p>
+                </div>
+            </div>
+
+            <!-- 가이드라인 분석 섹션 -->
+            <div class="analyze-section section-content" id="analyze-section" style="display: none;">
+                <h3>📚 가이드라인 분석</h3>
+                <p class="section-desc">의약품 관련 주제를 입력하면 주요 가이드라인별로 분석해드립니다.</p>
+
+                <div class="setting-group">
+                    <label>분석 예시</label>
+                    <div class="example-topics-small">
+                        <button class="topic-small-btn" onclick="setAnalyzeTopic('Cleaning Validation')">
+                            Cleaning Validation
+                        </button>
+                        <button class="topic-small-btn" onclick="setAnalyzeTopic('Data Integrity')">
+                            Data Integrity
+                        </button>
+                        <button class="topic-small-btn" onclick="setAnalyzeTopic('Process Validation')">
+                            Process Validation
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -156,6 +180,56 @@
                     </div>
                 </div>
 
+                <!-- 분석 초기 화면 -->
+                <div class="analyze-welcome-screen" id="analyze-welcome-screen" style="display: none;">
+                    <div class="welcome-content">
+                        <h2>📚 가이드라인 분석</h2>
+                        <p>의약품 관련 주제를 주요 가이드라인별로 분석합니다</p>
+
+                        <div class="example-topics">
+                            <h3>예시 주제:</h3>
+                            <button class="topic-btn" onclick="setAnalyzeTopic('Cleaning Validation')">
+                                Cleaning Validation
+                            </button>
+                            <button class="topic-btn" onclick="setAnalyzeTopic('Data Integrity (ALCOA+)')">
+                                Data Integrity (ALCOA+)
+                            </button>
+                            <button class="topic-btn" onclick="setAnalyzeTopic('Process Validation Lifecycle')">
+                                Process Validation Lifecycle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 분석 결과 영역 -->
+                <div class="analysis-result" id="analysis-result" style="display: none;">
+                    <div class="analysis-header">
+                        <h2 id="analysis-topic"></h2>
+                    </div>
+
+                    <div class="guideline-tabs">
+                        <button class="tab-btn active" onclick="switchTab('FDA')">FDA 21 CFR</button>
+                        <button class="tab-btn" onclick="switchTab('EU_GMP')">EU GMP</button>
+                        <button class="tab-btn" onclick="switchTab('ICH')">ICH Guidelines</button>
+                        <button class="tab-btn" onclick="switchTab('MFDS')">MFDS KGMP</button>
+                    </div>
+
+                    <div class="tab-content-container">
+                        <div class="tab-content active" id="tab-FDA">
+                            <div class="loading">분석 중...</div>
+                        </div>
+                        <div class="tab-content" id="tab-EU_GMP">
+                            <div class="loading">분석 중...</div>
+                        </div>
+                        <div class="tab-content" id="tab-ICH">
+                            <div class="loading">분석 중...</div>
+                        </div>
+                        <div class="tab-content" id="tab-MFDS">
+                            <div class="loading">분석 중...</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 메시지 영역 -->
                 <div class="messages" id="messages"></div>
             </div>
@@ -168,7 +242,7 @@
                         placeholder="토론 주제를 입력하세요... (예: 정기적 재밸리데이션에서 3 batch 수행이 필수적인가?)"
                         rows="2"
                     ></textarea>
-                    <button class="send-btn" onclick="startDebate()" id="send-btn">
+                    <button class="send-btn" onclick="handleSubmit()" id="send-btn">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                             <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
